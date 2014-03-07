@@ -75,6 +75,10 @@ func (c *MemoryCache) Get(key string) (resp []byte, ok bool) {
 func (c *MemoryCache) Set(key string, resp []byte) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	r, ok := c.items[key]
+	if ok {
+		c.currentByteSize -= len(r)
+	}
 	c.items[key] = resp
 	c.currentByteSize += len(resp)
 	fmt.Printf("Added %s, size now: %d\n", key, c.currentByteSize)
