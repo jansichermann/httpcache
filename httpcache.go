@@ -11,6 +11,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"strings"
@@ -56,8 +57,10 @@ func CachedResponse(c Cache, req *http.Request) (resp *http.Response, err error)
 
 // MemoryCache is an implemtation of Cache that stores responses in an in-memory map.
 type MemoryCache struct {
-	mu    sync.RWMutex
-	items map[string][]byte
+	mu              sync.RWMutex
+	items           map[string][]byte
+	maxByteSize     int
+	currentByteSize int
 }
 
 // Get returns the []byte representation of the response and true if present, false if not
@@ -73,12 +76,16 @@ func (c *MemoryCache) Set(key string, resp []byte) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.items[key] = resp
+	c.currentByteSize += len(resp)
+	fmt.Printf("Added %s, size now: %d\n", key, c.currentByteSize)
 }
 
 // Delete removes key from the cache
 func (c *MemoryCache) Delete(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	resp, _ := c.items[key]
+	c.currentByteSize -= len(resp)
 	delete(c.items, key)
 }
 
